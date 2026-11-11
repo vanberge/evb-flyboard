@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FlyBoard — 49418 Grandville &amp; KGRR Live LED Flight Board</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <!-- ULTRA-COMPACT SINGLE-ROW WIDESCREEN BAR (Collapsible) -->
+  <header class="top-bar" id="top-bar">
+    <div class="brand-cluster">
+      <div class="led-status-pip" id="live-pip" aria-hidden="true"></div>
+      <h1>FLYBOARD <span class="sub-badge" id="header-sub-badge">49418 // KGRR</span></h1>
+
+      <div class="segmented-group" role="group" aria-label="Quick Geofence Presets">
+        <button type="button" class="seg-btn is-active" data-loc="49418" data-airport="KGRR">49418</button>
+        <button type="button" class="seg-btn" data-loc="KGRR" data-airport="KGRR">KGRR</button>
+      </div>
+
+      <search class="location-search-wrap">
+        <form id="location-form" class="location-form" action="/api/flights" method="GET" aria-label="Observer ZIP code and reference airport">
+          <div class="loc-field">
+            <label for="zip-input">ZIP / Loc</label>
+            <input
+              type="text"
+              id="zip-input"
+              name="location"
+              value="49418"
+              autocomplete="postal-code"
+              autocorrect="off"
+              autocapitalize="none"
+              spellcheck="false"
+              maxlength="10"
+              enterkeyhint="done"
+              required
+            >
+          </div>
+          <div class="loc-field">
+            <label for="airport-input">Airport</label>
+            <input
+              type="text"
+              id="airport-input"
+              name="airport"
+              value="KGRR"
+              autocorrect="off"
+              autocapitalize="none"
+              spellcheck="false"
+              maxlength="4"
+              enterkeyhint="done"
+              required
+            >
+          </div>
+          <button type="submit" class="loc-submit-btn">Set</button>
+        </form>
+      </search>
+
+      <p class="subtitle" id="feed-status-text">Connecting to West Michigan ADS-B feed…</p>
+    </div>
+
+    <div class="control-cluster" role="group" aria-label="Quick Controls">
+      <!-- Quick Inline Airline / Craft Filter -->
+      <label class="ctrl-select-label highlight-filter" for="airline-select">
+        <span>Airline / Craft</span>
+        <select id="airline-select">
+          <option value="all" selected>All Airlines &amp; Craft</option>
+          <option value="DAL">Delta Air Lines (DL)</option>
+          <option value="AAL">American Airlines (AA)</option>
+          <option value="UAL">United Airlines (UA)</option>
+          <option value="SWA">Southwest Airlines (WN)</option>
+          <option value="AAY">Allegiant Air (G4)</option>
+          <option value="GA_PRIVATE">Personal / Private / GA</option>
+          <option value="CARGO">Cargo (FedEx / UPS)</option>
+          <option value="MIL_GOV">Military / Gov / Medevac</option>
+          <option value="OTHER_COMM">Other Commercial</option>
+        </select>
+      </label>
+
+      <!-- Consolidated Options & Filters Popover Trigger -->
+      <button type="button" class="action-btn" popovertarget="controls-popover">
+        ⚙ Filters &amp; Display
+      </button>
+
+      <button type="button" class="action-btn" id="kiosk-btn">Fullscreen Kiosk</button>
+      <button type="button" class="action-btn subtle" id="collapse-bar-btn" aria-label="Collapse top bar">&uarr; Hide Bar</button>
+    </div>
+  </header>
+
+  <!-- FLOATING CORNER MINI-PILL WHEN TOP BAR IS COLLAPSED OR IN FULLSCREEN -->
+  <div class="floating-kiosk-pill" id="floating-kiosk-pill" hidden>
+    <span class="floating-pill-status" id="floating-pill-status">49418 • LIVE</span>
+    <button type="button" class="mini-btn" popovertarget="controls-popover">⚙ Filters &amp; Airlines</button>
+    <button type="button" class="mini-btn" id="expand-bar-btn" aria-label="Show top bar">&darr; Bar</button>
+  </div>
+
+  <!-- NATIVE POPOVER FOR CONSOLIDATED OPTIONS & AIRLINE CHIPS -->
+  <div id="controls-popover" popover aria-labelledby="popover-heading">
+    <div class="popover-header">
+      <h2 id="popover-heading">FlyBoard Filters &amp; Display Settings</h2>
+      <button type="button" class="close-btn" popovertarget="controls-popover" popovertargetaction="hide" aria-label="Close settings popover">&times;</button>
+    </div>
+
+    <div class="popover-section">
+      <span class="popover-label">Filter by Airline / Craft Category (Live Sky Counts)</span>
+      <div class="airline-chip-grid" id="airline-chip-grid" role="group" aria-label="Airline and aircraft category filter chips">
+        <button type="button" class="airline-chip is-active" data-airline="all">All Traffic <span class="chip-count" data-count-for="all">0</span></button>
+        <button type="button" class="airline-chip" data-airline="DAL">Delta <span class="chip-count" data-count-for="DAL">0</span></button>
+        <button type="button" class="airline-chip" data-airline="AAL">American <span class="chip-count" data-count-for="AAL">0</span></button>
+        <button type="button" class="airline-chip" data-airline="UAL">United <span class="chip-count" data-count-for="UAL">0</span></button>
+        <button type="button" class="airline-chip" data-airline="SWA">Southwest <span class="chip-count" data-count-for="SWA">0</span></button>
+        <button type="button" class="airline-chip" data-airline="AAY">Allegiant <span class="chip-count" data-count-for="AAY">0</span></button>
+        <button type="button" class="airline-chip" data-airline="GA_PRIVATE">Personal / Private <span class="chip-count" data-count-for="GA_PRIVATE">0</span></button>
+        <button type="button" class="airline-chip" data-airline="CARGO">Cargo (FX/UPS) <span class="chip-count" data-count-for="CARGO">0</span></button>
+        <button type="button" class="airline-chip" data-airline="MIL_GOV">Military / Gov <span class="chip-count" data-count-for="MIL_GOV">0</span></button>
+        <button type="button" class="airline-chip" data-airline="OTHER_COMM">Other Airlines <span class="chip-count" data-count-for="OTHER_COMM">0</span></button>
+      </div>
+    </div>
+
+    <div class="popover-controls-grid">
+      <label class="ctrl-select-label" for="radius-select">
+        <span>Scan Radius</span>
+        <select id="radius-select">
+          <option value="20">20 NM</option>
+          <option value="45" selected>45 NM</option>
+          <option value="75">75 NM</option>
+          <option value="120">120 NM</option>
+        </select>
+      </label>
+
+      <label class="ctrl-select-label" for="filter-select">
+        <span>Corridor Filter</span>
+        <select id="filter-select">
+          <option value="all" selected>All Altitudes &amp; Routes</option>
+          <option value="kgrr">KGRR Arrivals/Departures Only</option>
+          <option value="low">Low Altitude (&lt; 15,000 ft)</option>
+          <option value="commercial">Scheduled Commercial Routes</option>
+        </select>
+      </label>
+
+      <label class="ctrl-select-label" for="palette-select">
+        <span>LED Shader</span>
+        <select id="palette-select">
+          <option value="rgb" selected>RGB Full Color</option>
+          <option value="amber">Retro Amber Airport</option>
+          <option value="cyan">VFD Studio Cyan</option>
+          <option value="green">Tactical Night Green</option>
+        </select>
+      </label>
+
+      <label class="ctrl-select-label" for="sim-select">
+        <span>Feed Source</span>
+        <select id="sim-select">
+          <option value="live" selected>Auto Live (FR24 + adsb.fi Failover)</option>
+          <option value="adsb_fi">Unfiltered Live (adsb.fi OpenData)</option>
+          <option value="approach_rush">Demo: KGRR Approach Rush</option>
+          <option value="emergency">Demo: Squawk 7700 Alert</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="popover-footer">
+      <button type="button" class="action-btn primary" command="show-modal" commandfor="architecture-modal">
+        Cloud Run &amp; Raspberry Pi Guide
+      </button>
+    </div>
+  </div>
+
+  <main class="dashboard-main">
+    <!-- PHYSICAL LED MATRIX FRAME -->
+    <section class="matrix-housing" aria-label="Virtual 192 by 64 RGB LED Dot-Matrix Display">
+      <div class="housing-screws top-left" aria-hidden="true"></div>
+      <div class="housing-screws top-right" aria-hidden="true"></div>
+      <div class="housing-screws bottom-left" aria-hidden="true"></div>
+      <div class="housing-screws bottom-right" aria-hidden="true"></div>
+
+      <div class="matrix-bezel">
+        <canvas id="led-matrix-canvas" width="1536" height="512" aria-label="Live overhead flight LED dot matrix display"></canvas>
+      </div>
+
+      <div class="housing-footer">
+        <div class="matrix-meta-left">
+          <span class="hw-tag">HUB75-SIM // 192×64 DOTS</span>
+          <span class="hw-tag" id="active-filter-tag">FILTER: ALL AIRLINES</span>
+          <span class="hw-tag" id="cycle-indicator">AUTO-CYCLE: ON (8s)</span>
+          <button type="button" class="mini-btn" id="prev-flight-btn" aria-label="Previous aircraft">&larr; Prev</button>
+          <button type="button" class="mini-btn" id="toggle-lock-btn">Lock Flight</button>
+          <button type="button" class="mini-btn" id="next-flight-btn" aria-label="Next aircraft">Next &rarr;</button>
+        </div>
+        <div class="matrix-meta-right" id="metar-strip">
+          <span class="vfr-badge" id="metar-cat-badge">VFR</span>
+          <span id="metar-raw-text">Loading KGRR METAR…</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- COMPANION "PI MONITOR" HYBRID LOWER DECK -->
+    <div class="companion-grid">
+      <!-- 1. LIVE POLAR RADAR SCOPE -->
+      <section class="panel-card radar-card" aria-labelledby="radar-heading">
+        <div class="panel-header">
+          <h2 id="radar-heading">49418 / KGRR Sky-Dome Radar</h2>
+          <span class="panel-badge" id="radar-count-badge">0 ACFT</span>
+        </div>
+        <div class="radar-stage">
+          <canvas id="radar-canvas" width="440" height="440" aria-label="Interactive polar radar map around Grandville 49418 and KGRR"></canvas>
+        </div>
+        <p class="radar-hint">Click any aircraft blip on the radar to lock it onto the LED FlyBoard above.</p>
+      </section>
+
+      <!-- 2. SELECTED AIRCRAFT SPOTTER CARD & WINDOW COMPASS -->
+      <section class="panel-card spotter-card" aria-labelledby="spotter-heading">
+        <div class="panel-header">
+          <h2 id="spotter-heading">Airframe Spotter &amp; Sky Look-Up</h2>
+          <span class="panel-badge accent" id="spotter-phase-badge">SCANNING</span>
+        </div>
+
+        <div class="spotter-body">
+          <div class="photo-frame">
+            <img
+              id="aircraft-photo"
+              src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+              alt="Selected aircraft photograph"
+              width="640"
+              height="360"
+              hidden
+            >
+            <div class="photo-fallback" id="photo-fallback">
+              <div class="blueprint-plane" id="blueprint-plane-label">B738</div>
+              <p id="photo-fallback-caption">Live ADS-B Transponder Lock</p>
+            </div>
+            <div class="photo-overlay-bar">
+              <span id="spotter-reg">N374DA</span>
+              <span id="spotter-model">Boeing 737-800</span>
+            </div>
+          </div>
+
+          <div class="window-look-box">
+            <div class="look-header">
+              <span class="look-title">WHICH WINDOW TO LOOK OUT</span>
+              <span class="look-coords" id="observer-coords-label">From 49418 (Grandville)</span>
+            </div>
+            <div class="look-metrics">
+              <div class="look-stat">
+                <span class="stat-label">Direction</span>
+                <strong class="stat-val" id="look-bearing">088° E</strong>
+              </div>
+              <div class="look-stat">
+                <span class="stat-label">Elevation Angle</span>
+                <strong class="stat-val highlight" id="look-elevation">34.5° UP</strong>
+              </div>
+              <div class="look-stat">
+                <span class="stat-label">Distance</span>
+                <strong class="stat-val" id="look-distance">3.2 MI</strong>
+              </div>
+              <div class="look-stat">
+                <span class="stat-label">Radio Callsign</span>
+                <strong class="stat-val" id="look-callsign">"DELTA"</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- VHF / UHF AIRBAND COMMS & LIVE SCANNER TUNER -->
+          <div class="radio-tuner-box">
+            <div class="tuner-top-row">
+              <div>
+                <span class="tuner-label">ACTIVE VHF / UHF AIRBAND SECTOR</span>
+                <div class="tuner-freq-line">
+                  <strong class="freq-readout" id="atc-freq-mhz">128.400 MHz</strong>
+                  <span class="uhf-readout" id="atc-uhf-mhz">UHF 339.800</span>
+                </div>
+                <span class="tuner-agency" id="atc-agency">GREAT LAKES APPR/DEP (SOUTH)</span>
+              </div>
+              <div class="tuner-actions">
+                <a
+                  id="liveatc-link"
+                  class="scanner-link-btn primary"
+                  href="https://www.liveatc.net/search/?icao=KGRR"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >🎧 LiveATC</a>
+                <a
+                  id="radioref-link"
+                  class="scanner-link-btn"
+                  href="https://www.radioreference.com/db/aid/2249"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >📻 RadioRef</a>
+              </div>
+            </div>
+            <div class="tuner-sub-row">
+              <span>Next Handoff: <strong id="atc-handoff">135.650 MHz (KGRR Tower)</strong></span>
+            </div>
+            <details class="freq-Bandplan-details">
+              <summary>West Michigan / KGRR Airband Frequency Chart</summary>
+              <div class="freq-chart-grid">
+                <div><strong>135.650</strong> KGRR Tower (UHF 339.8)</div>
+                <div><strong>128.400</strong> Great Lakes Appr South</div>
+                <div><strong>124.600</strong> Great Lakes Appr North</div>
+                <div><strong>121.800</strong> KGRR Ground Control</div>
+                <div><strong>119.300</strong> KGRR Clearance Deliv</div>
+                <div><strong>118.725</strong> KGRR ATIS Weather</div>
+                <div><strong>133.200</strong> ZAU Center (GRR Low)</div>
+                <div><strong>126.125</strong> ZAU Center (PMM High)</div>
+                <div><strong>128.650</strong> ZAU Center (Ultra-High)</div>
+                <div><strong>122.800</strong> Local CTAF (08C / 6D6)</div>
+              </div>
+            </details>
+          </div>
+
+          <dl class="telemetry-dl">
+            <div>
+              <dt>Origin</dt>
+              <dd id="detail-origin">ATL (Atlanta)</dd>
+            </div>
+            <div>
+              <dt>Destination</dt>
+              <dd id="detail-dest">GRR (Grand Rapids)</dd>
+            </div>
+            <div>
+              <dt>Altitude / V-Speed</dt>
+              <dd id="detail-alt">2,450 ft (-750 fpm)</dd>
+            </div>
+            <div>
+              <dt>Ground Speed / Track</dt>
+              <dd id="detail-spd">162 kts (186 mph) • 088°</dd>
+            </div>
+          </dl>
+        </div>
+      </section>
+
+      <!-- 3. LIVE OVERHEAD FLIGHT QUEUE -->
+      <section class="panel-card table-card" aria-labelledby="queue-heading">
+        <div class="panel-header">
+          <h2 id="queue-heading">Overhead Traffic Queue</h2>
+          <span class="panel-badge" id="last-updated-badge">LIVE</span>
+        </div>
+        <div class="table-scroll">
+          <table class="flight-table">
+            <thead>
+              <tr>
+                <th scope="col">Flight</th>
+                <th scope="col">Operator</th>
+                <th scope="col">Route</th>
+                <th scope="col">Type</th>
+                <th scope="col">Alt (ft)</th>
+                <th scope="col">VHF Comms</th>
+                <th scope="col">Dist / Sky</th>
+              </tr>
+            </thead>
+            <tbody id="flight-table-body">
+              <tr>
+                <td colspan="7" class="empty-cell">Scanning West Michigan airspace…</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- NATIVE MODAL DIALOG FOR CLOUD RUN + RASPBERRY PI ARCHITECTURE -->
+  <dialog id="architecture-modal" closedby="any" aria-labelledby="modal-title">
+    <div class="modal-inner">
+      <div class="modal-header">
+        <h2 id="modal-title">Running Your FlyBoard: Cloud Run Free Tier &amp; Raspberry Pi</h2>
+        <button type="button" class="close-btn" command="close" commandfor="architecture-modal" aria-label="Close guide">&times;</button>
+      </div>
+
+      <div class="modal-content">
+        <section class="guide-section" aria-labelledby="cr-title">
+          <h3 id="cr-title">1. Why Google Cloud Run Works at ~$0.00/mo (Free Tier)</h3>
+          <p>
+            Cloud Run charges <strong>only while an HTTP request is actively being processed</strong> (when configured with default request-based billing and <code>--min-instances=0</code>).
+          </p>
+          <ul class="guide-list">
+            <li><strong>Google Cloud Free Tier Allowance:</strong> Includes 2 million requests, 180,000 vCPU-seconds, and 360,000 GiB-seconds free every month.</li>
+            <li><strong>How FlyBoard Uses It:</strong> Your browser or Raspberry Pi polls <code>/api/flights</code> every 5 seconds (~200ms execution time per poll). Even running 12 hours a day every day of the month, that is ~259,000 requests and ~51,000 vCPU-seconds—<strong>less than 30% of the monthly free tier</strong>!</li>
+            <li><strong>Smart Idle Pause:</strong> When you close the browser tab or turn off the monitor at night, Cloud Run scales to zero instances within minutes and consumes zero compute.</li>
+          </ul>
+          <pre role="region" aria-label="Cloud Run deploy command" tabindex="0"><code>gcloud run deploy kgrr-flyboard \
+  --source . \
+  --region us-central1 \
+  --allow-unauthenticated \
+  --min-instances 0 \
+  --max-instances 2 \
+  --memory 256Mi \
+  --cpu 1</code></pre>
+        </section>
+
+        <section class="guide-section" aria-labelledby="pi-title">
+          <h3 id="pi-title">2. Raspberry Pi Kiosk + Monitor Setup</h3>
+          <p>
+            Once deployed to Cloud Run (or running locally on the Pi), point a Raspberry Pi connected to an ultra-wide bar LCD (like a <code>1920×480</code> stretched display) or standard monitor into fullscreen Chromium Kiosk mode:
+          </p>
+          <pre role="region" aria-label="Raspberry Pi kiosk launch command" tabindex="0"><code>chromium-browser --kiosk --app=https://YOUR-CLOUD-RUN-URL.run.app \
+  --start-fullscreen --noerrdialogs --disable-infobars</code></pre>
+        </section>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="action-btn primary" command="close" commandfor="architecture-modal" autofocus>Got It</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Progressive Enhancement Polyfills for Invoker Commands, Popover & Scroll-State -->
+  <script type="module">
+    if (!('commandForElement' in HTMLButtonElement.prototype)) {
+      import('https://esm.run/invokers-polyfill');
+    }
+    if (!Object.hasOwn(HTMLElement.prototype, 'popover')) {
+      import('https://unpkg.com/@oddbird/popover-polyfill@latest/dist/popover.min.js');
+    }
+    const modal = document.getElementById('architecture-modal');
+    if (modal && !('closedBy' in HTMLDialogElement.prototype)) {
+      modal.addEventListener('click', (event) => {
+        if (event.target !== modal) return;
+        const rect = modal.getBoundingClientRect();
+        const isDialogContent = (
+          rect.top <= event.clientY &&
+          event.clientY <= rect.top + rect.height &&
+          rect.left <= event.clientX &&
+          event.clientX <= rect.left + rect.width
+        );
+        if (isDialogContent) return;
+        modal.close();
+      });
+    }
+    if (!CSS.supports('container-type', 'scroll-state')) {
+      const bar = document.querySelector('.top-bar');
+      let lastY = scrollY;
+      addEventListener('scroll', () => {
+        const y = Math.max(0, Math.min(scrollY, document.documentElement.scrollHeight - innerHeight));
+        if (y === lastY) return;
+        bar?.classList.toggle('is-hidden', y > lastY && y > bar.offsetHeight);
+        lastY = y;
+      }, { passive: true });
+    }
+  </script>
+  <script src="/static/app.js" defer></script>
+</body>
+</html>
